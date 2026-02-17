@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func GetLinks(subscriptionLink string) ([]string, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+func GetLinks(subscriptionLink string, timeoutTime time.Duration) ([]string, error) {
+	client := &http.Client{Timeout: timeoutTime}
 
 	req, err := http.NewRequest("GET", subscriptionLink, nil)
 	if err != nil {

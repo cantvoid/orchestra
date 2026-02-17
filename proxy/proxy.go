@@ -27,8 +27,8 @@ func killPortHogs(port int) {
 		}
 	}
 }
-func GetProxyLatency(vless_uri string) int {
-	parsed, err := url.Parse(vless_uri)
+func GetProxyLatency(uri string) int {
+	parsed, err := url.Parse(uri)
 	if err != nil {
 		return -1
 	}
@@ -53,7 +53,7 @@ func GetProxyLatency(vless_uri string) int {
 	return int(elapsedTime)
 }
 
-func StartTun(config map[string]interface{}, singboxPath string) (*process.Process, error) {
+func StartTun(config map[string]interface{}, singboxPath string, waitTime time.Duration) (*process.Process, error) {
 	killPortHogs(10808)
 
 	tmpFile, err := os.CreateTemp("", "dynamic_config.json")
@@ -79,7 +79,7 @@ func StartTun(config map[string]interface{}, singboxPath string) (*process.Proce
 		os.Remove(tmpPath)
 		return nil, err
 	}
-	time.Sleep(3 * time.Second) //TODO: fix super arbitrary value
+	time.Sleep(waitTime)
 	os.Remove(tmpPath)
 
 	proc, err := process.NewProcess(int32(cmd.Process.Pid))

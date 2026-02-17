@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-func getBestProxy(subscriptionLink string) (string, error) {
-	links, err := fetcher.GetLinks(subscriptionLink)
+func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, error) {
+	links, err := fetcher.GetLinks(subscriptionLink, timeoutTime)
 
 	if err != nil {
 		return "", err
@@ -61,6 +61,13 @@ func main() {
 	singboxPath := flag.String("singbox-path", "", "path to sing-box binary")
 	flag.StringVar(singboxPath, "s", "", "path to sing-box binary")
 
+	waitTime := flag.Duration("wait", 5*time.Second, "how much time to wait for sing-box to start (use this when sing-box can't read the config fast enough)")
+
+	testLink := flag.String("testwith", "https://google.com/generate_204", "the uri for testing internet connection")
+
+	timeoutTime := flag.Duration("timeout", 30*time.Second, "how much to wait for timeout during HTTP requests")
+	pollTime := flag.Duration("poll", 10*time.Second, "how fast to poll connection")
+
 	flag.Parse()
 
 	if *subscriptionLink == "" || *singboxPath == "" {
@@ -71,7 +78,7 @@ func main() {
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	for {
-		bestProxy, err := getBestProxy(*subscriptionLink)
+		bestProxy, err := getBestProxy(*subscriptionLink, *timeoutTime)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to get best proxy: %s\n", err)
 			time.Sleep(3 * time.Second)
@@ -84,7 +91,7 @@ func main() {
 			continue
 		}
 		fmt.Printf("starting sing-box with link %s\n", bestProxy)
-		proc, err := proxy.StartTun(config, *singboxPath)
+		proc, err := proxy.StartTun(config, *singboxPath, *waitTime)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "couldn't start proxy: %s\n", err)
@@ -94,7 +101,7 @@ func main() {
 
 		for {
 			for i := 0; i < 3; i++ {
-				_, err = client.Get("http://google.com/generate_204")
+				_, err = client.Get(*testLink)
 				if err == nil {
 					break
 				}
@@ -105,7 +112,7 @@ func main() {
 				proc.Terminate()
 				break
 			} else {
-				time.Sleep(10 * time.Second)
+				time.Sleep(*pollTime)
 			}
 		}
 	}
