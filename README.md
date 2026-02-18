@@ -6,8 +6,10 @@ to use orchestra, you will need sing-box. you can get it from [here](https://git
 ```bash
 orchestra --link https://fake.com/subscription --singbox-path /usr/bin/sing-box
 #automatically starts the best subscription by latency, and fails over when it rotates or stops working.
-orchestra -l  https://fake.com/subscription -s /usr/bin/sing-box
-#shorter usage
+orchestra -l  https://fake.com/subscription -s /usr/bin/sing-box -wait 10s -timeout 1m
+#shorter usage, with more customization
+orchestra
+#shows all options
 ```
 
 ### compiling from source
