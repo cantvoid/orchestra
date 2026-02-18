@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,11 +25,11 @@ func killPortHogs(port int) error {
 
 	for _, conn := range connections {
 		if conn.Laddr.Port == uint32(port) && conn.Pid != currentPid {
-			process, err := process.NewProcess(conn.Pid)
-			if err != nil {
-				return err
+			if p, err := process.NewProcess(conn.Pid); err == nil {
+				if err := p.Kill(); err != nil {
+					fmt.Fprintf(os.Stderr, "failed to kill pid %d: %v", conn.Pid, err)
+				}
 			}
-			process.Kill()
 		}
 	}
 	return nil
@@ -77,7 +78,7 @@ func StartTun(config map[string]interface{}, singboxPath string, waitTime time.D
 	}
 	tmpFile.Close()
 
-	cmd := exec.Command(singboxPath, "run", "-c", tmpPath)
+	cmd := exec.Command(singboxPath, "run", "-c", tmpPath, "--disable-color")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -88,9 +89,18 @@ func StartTun(config map[string]interface{}, singboxPath string, waitTime time.D
 	time.Sleep(waitTime)
 	os.Remove(tmpPath)
 
+	exists, err := process.PidExists(int32(cmd.Process.Pid))
+	if err != nil {
+		return nil, fmt.Errorf("failed to check process: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("sing-box died during startup")
+	}
+
 	proc, err := process.NewProcess(int32(cmd.Process.Pid))
 	if err != nil {
 		return nil, err
 	}
+
 	return proc, nil
 }
