@@ -15,22 +15,28 @@ import (
 	"encoding/json"
 )
 
-func killPortHogs(port int) {
-	connections, _ := gopsnet.Connections("tcp")
+func killPortHogs(port int) error {
+	connections, err := gopsnet.Connections("tcp")
+	if err != nil {
+		return err
+	}
 	currentPid := int32(os.Getpid())
 
 	for _, conn := range connections {
 		if conn.Laddr.Port == uint32(port) && conn.Pid != currentPid {
-			if process, err := process.NewProcess(conn.Pid); err == nil {
-				process.Kill()
+			process, err := process.NewProcess(conn.Pid)
+			if err != nil {
+				return err
 			}
+			process.Kill()
 		}
 	}
+	return nil
 }
-func GetProxyLatency(uri string) int {
+func GetProxyLatency(uri string) (int, error) {
 	parsed, err := url.Parse(uri)
 	if err != nil {
-		return -1
+		return -1, err
 	}
 	host := parsed.Hostname()
 	port := parsed.Port()
@@ -44,13 +50,13 @@ func GetProxyLatency(uri string) int {
 	}
 	connection, err := net.DialTimeout("tcp", address, 10*time.Second)
 	if err != nil {
-		return -1
+		return -1, err
 	}
 	defer connection.Close()
 	stop := time.Now().UnixMilli()
 	elapsedTime := stop - start
 
-	return int(elapsedTime)
+	return int(elapsedTime), nil
 }
 
 func StartTun(config map[string]interface{}, singboxPath string, waitTime time.Duration) (*process.Process, error) {

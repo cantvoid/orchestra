@@ -28,7 +28,7 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 
 	for _, link := range links {
 		go func(l string) {
-			latency := proxy.GetProxyLatency(l)
+			latency, _ := proxy.GetProxyLatency(l)
 			results <- result{
 				link:    l,
 				latency: latency,
