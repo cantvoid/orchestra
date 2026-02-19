@@ -17,9 +17,9 @@ func ProxyToSingbox(proxyURL string) (map[string]interface{}, error) {
 	case strings.HasPrefix(proxyURL, "vless://"):
 		outbound, err = vlessToSingbox(proxyURL)
 	case strings.HasPrefix(proxyURL, "vmess://"):
-		outbound, err = vmessToSingbox(proxyURL)
+		outbound, err = VmessToSingbox(proxyURL)
 	case strings.HasPrefix(proxyURL, "trojan://"):
-		outbound, err = trojanToSingbox(proxyURL)
+		outbound, err = TrojanToSingbox(proxyURL)
 	}
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func vlessToSingbox(proxyURL string) (map[string]interface{}, error) {
 	return outbound, nil
 }
 
-func vmessToSingbox(proxyURL string) (map[string]interface{}, error) {
+func VmessToSingbox(proxyURL string) (map[string]interface{}, error) {
 	b64Part := strings.TrimPrefix(proxyURL, "vmess://")
 	decoded, err := base64.StdEncoding.DecodeString(fixPadding(b64Part))
 	if err != nil {
@@ -145,16 +145,18 @@ func vmessToSingbox(proxyURL string) (map[string]interface{}, error) {
 	}
 	var data map[string]interface{}
 	json.Unmarshal(decoded, &data)
+	portStr := fmt.Sprint(data["port"])
+	port, _ := strconv.Atoi(portStr)
 	return map[string]interface{}{
 		"type":        "vmess",
 		"server":      fmt.Sprint(data["add"]),
-		"server_port": int(data["port"].(float64)),
+		"server_port": port,
 		"uuid":        fmt.Sprint(data["id"]),
 		"security":    "auto",
 	}, nil
 }
 
-func trojanToSingbox(proxyURL string) (map[string]interface{}, error) {
+func TrojanToSingbox(proxyURL string) (map[string]interface{}, error) {
 	u, err := url.Parse(proxyURL)
 	if err != nil {
 		return nil, err
