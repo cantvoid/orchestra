@@ -2,9 +2,12 @@ package proxy
 
 import (
 	"fmt"
+	"orchestra/parser"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"net"
@@ -35,12 +38,30 @@ func killPortHogs(port int) error {
 	return nil
 }
 func GetProxyLatency(uri string) (int, error) {
-	parsed, err := url.Parse(uri)
-	if err != nil {
-		return -1, err
+	var host string
+	var port string
+	if strings.HasPrefix(uri, "vmess://") {
+		parsed, err := parser.VmessToSingbox(uri)
+		if err != nil {
+			return -1, fmt.Errorf("error while trying to parse vmess link '%s': %v", uri, err)
+		}
+		host = parsed["server"].(string)
+		port = strconv.Itoa(parsed["server_port"].(int))
+	} else if strings.HasPrefix(uri, "trojan://") {
+		parsed, err := parser.TrojanToSingbox(uri)
+		if err != nil {
+			return -1, fmt.Errorf("error while trying to parse trojan link '%s': %v", uri, err)
+		}
+		host = parsed["server"].(string)
+		port = strconv.Itoa(parsed["server_port"].(int))
+	} else {
+		parsed, err := url.Parse(uri)
+		if err != nil {
+			return -1, fmt.Errorf("error while trying to parse link '%s': %v", uri, err)
+		}
+		host = parsed.Hostname()
+		port = parsed.Port()
 	}
-	host := parsed.Hostname()
-	port := parsed.Port()
 
 	start := time.Now().UnixMilli()
 	var address string
