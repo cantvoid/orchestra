@@ -37,11 +37,13 @@ func killPortHogs(port int) error {
 	}
 	return nil
 }
-func GetProxyLatency(uri string) (int, error) {
+func GetProxyLatency(uri string, timeoutTime time.Duration) (int, error) {
 	var host string
 	var port string
 	var ok bool
 	var portint int
+
+	//TODO: make this less messy
 	if strings.HasPrefix(uri, "vmess://") {
 		parsed, err := parser.VmessToSingbox(uri)
 		if err != nil {
@@ -73,13 +75,15 @@ func GetProxyLatency(uri string) (int, error) {
 			return -1, fmt.Errorf("expected port to be an int, is %T\n", parsed["server_port"])
 		}
 		port = strconv.Itoa(portint)
-	} else {
+	} else if strings.HasPrefix(uri, "vless://") {
 		parsed, err := url.Parse(uri)
 		if err != nil {
 			return -1, fmt.Errorf("error while trying to parse link '%s': %v\n", uri, err)
 		}
 		host = parsed.Hostname()
 		port = parsed.Port()
+	} else {
+		return -1, fmt.Errorf("unsupported protocol\n")
 	}
 
 	start := time.Now().UnixMilli()
@@ -89,7 +93,7 @@ func GetProxyLatency(uri string) (int, error) {
 	} else {
 		address = host + ":443"
 	}
-	connection, err := net.DialTimeout("tcp", address, 10*time.Second)
+	connection, err := net.DialTimeout("tcp", address, timeoutTime)
 	if err != nil {
 		return -1, err
 	}

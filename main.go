@@ -28,7 +28,7 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 
 	for _, link := range links {
 		go func(l string) {
-			latency, err := proxy.GetProxyLatency(l)
+			latency, err := proxy.GetProxyLatency(l, timeoutTime)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error getting proxy latency for %s: %s", l, err)
 			}
