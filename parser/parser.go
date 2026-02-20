@@ -20,12 +20,17 @@ func ProxyToSingbox(proxyURL string) (map[string]interface{}, error) {
 		outbound, err = VmessToSingbox(proxyURL)
 	case strings.HasPrefix(proxyURL, "trojan://"):
 		outbound, err = TrojanToSingbox(proxyURL)
+	default:
+		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	serverHostname := outbound["server"].(string)
+	serverHostname, ok := outbound["server"].(string)
+	if !ok {
+		return nil, fmt.Errorf("expected server hostname to be string, got %T\n", outbound["server"])
+	}
 	outbound["tag"] = "proxy"
 
 	return map[string]interface{}{
