@@ -30,7 +30,7 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 		go func(l string) {
 			latency, err := proxy.GetProxyLatency(l, timeoutTime)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "error getting proxy latency for %s: %s", l, err)
+				fmt.Fprintf(os.Stderr, "error getting proxy latency for %s: %s\n", l, err)
 			}
 			results <- result{
 				link:    l,
@@ -51,7 +51,7 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 	}
 
 	if bestLink == "" {
-		return "", fmt.Errorf("no valid proxies found")
+		return "", fmt.Errorf("no valid proxies found\n")
 	}
 
 	return bestLink, nil
