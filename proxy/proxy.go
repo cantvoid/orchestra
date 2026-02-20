@@ -30,7 +30,7 @@ func killPortHogs(port int) error {
 		if conn.Laddr.Port == uint32(port) && conn.Pid != currentPid {
 			if p, err := process.NewProcess(conn.Pid); err == nil {
 				if err := p.Kill(); err != nil {
-					fmt.Fprintf(os.Stderr, "failed to kill pid %d: %v", conn.Pid, err)
+					fmt.Fprintf(os.Stderr, "failed to kill pid %d: %v\n", conn.Pid, err)
 				}
 			}
 		}
@@ -40,24 +40,43 @@ func killPortHogs(port int) error {
 func GetProxyLatency(uri string) (int, error) {
 	var host string
 	var port string
+	var ok bool
+	var portint int
 	if strings.HasPrefix(uri, "vmess://") {
 		parsed, err := parser.VmessToSingbox(uri)
 		if err != nil {
-			return -1, fmt.Errorf("error while trying to parse vmess link '%s': %v", uri, err)
+			return -1, fmt.Errorf("error while trying to parse vmess link '%s': %v\n", uri, err)
 		}
-		host = parsed["server"].(string)
-		port = strconv.Itoa(parsed["server_port"].(int))
+		host, ok = parsed["server"].(string)
+		if !ok {
+			return -1, fmt.Errorf("expected host to be string, is %T\n", parsed["server"])
+		}
+
+		portint, ok = parsed["server_port"].(int)
+		if !ok {
+			return -1, fmt.Errorf("expected port to be an int, is %T\n", parsed["server_port"])
+		}
+		port = strconv.Itoa(portint)
 	} else if strings.HasPrefix(uri, "trojan://") {
 		parsed, err := parser.TrojanToSingbox(uri)
 		if err != nil {
-			return -1, fmt.Errorf("error while trying to parse trojan link '%s': %v", uri, err)
+			return -1, fmt.Errorf("error while trying to parse trojan link '%s': %v\n", uri, err)
 		}
-		host = parsed["server"].(string)
-		port = strconv.Itoa(parsed["server_port"].(int))
+
+		host, ok = parsed["server"].(string)
+		if !ok {
+			return -1, fmt.Errorf("expected host to be an int, is %T\n", parsed["server"])
+		}
+
+		portint, ok = parsed["server_port"].(int)
+		if !ok {
+			return -1, fmt.Errorf("expected port to be an int, is %T\n", parsed["server_port"])
+		}
+		port = strconv.Itoa(portint)
 	} else {
 		parsed, err := url.Parse(uri)
 		if err != nil {
-			return -1, fmt.Errorf("error while trying to parse link '%s': %v", uri, err)
+			return -1, fmt.Errorf("error while trying to parse link '%s': %v\n", uri, err)
 		}
 		host = parsed.Hostname()
 		port = parsed.Port()
@@ -112,10 +131,10 @@ func StartTun(config map[string]interface{}, singboxPath string, waitTime time.D
 
 	exists, err := process.PidExists(int32(cmd.Process.Pid))
 	if err != nil {
-		return nil, fmt.Errorf("failed to check process: %w", err)
+		return nil, fmt.Errorf("failed to check process: %w\n", err)
 	}
 	if !exists {
-		return nil, fmt.Errorf("sing-box died during startup")
+		return nil, fmt.Errorf("sing-box died during startup\n")
 	}
 
 	proc, err := process.NewProcess(int32(cmd.Process.Pid))
