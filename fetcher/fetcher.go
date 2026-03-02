@@ -1,11 +1,9 @@
 package fetcher
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -50,10 +48,9 @@ func GetLinks(subscriptionLink string, timeoutTime time.Duration) ([]string, err
 	if len(body) == 0 {
 		return nil, fmt.Errorf("empty response body")
 	}
-	decoded, err := base64.StdEncoding.DecodeString(string(body))
+	decodedLinks, err := BodyToLink(body)
 	if err != nil {
 		return nil, err
 	}
-	decodedLinks := strings.Split(string(decoded), "\n")
 	return decodedLinks, nil
 }
