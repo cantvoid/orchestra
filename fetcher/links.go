@@ -12,8 +12,10 @@ func BodyToLink(body []byte) ([]string, error) {
 	_, err := base64.StdEncoding.DecodeString(string(body))
 	if err == nil {
 		method = "base64"
-	} else {
+	} else if strings.HasPrefix(string(body), "[") && strings.HasSuffix(string(body), "]") {
 		method = "xrayjson"
+	} else if strings.Contains(string(body), "\n") && strings.Contains(string(body), "://") { //hacky
+		method = "plain"
 	}
 
 	var decodedLinks []string
@@ -30,6 +32,10 @@ func BodyToLink(body []byte) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse subscription data: %w", err)
 		}
+	case "plain":
+		decodedLinks = strings.Split(string(body), "\n")
+	default:
+		return nil, fmt.Errorf("unkown subscription data format")
 	}
 	return decodedLinks, nil
 }
