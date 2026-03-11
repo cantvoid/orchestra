@@ -12,11 +12,20 @@ import (
 	"time"
 )
 
-func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, error) {
-	links, err := fetcher.GetLinks(subscriptionLink, timeoutTime)
+func getBestProxy(subscriptionLinks []string, timeoutTime time.Duration) (string, error) {
+	var allLinks []string
 
-	if err != nil {
-		return "", err
+	for _, subscriptionLink := range subscriptionLinks {
+		links, err := fetcher.GetLinks(subscriptionLink, timeoutTime)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error fetching from %s: %s\n", subscriptionLink, err)
+			continue
+		}
+		allLinks = append(allLinks, links...)
+	}
+
+	if len(allLinks) == 0 {
+		return "", fmt.Errorf("no links found from any subscription")
 	}
 
 	type result struct {
@@ -24,9 +33,9 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 		latency int
 	}
 
-	results := make(chan result, len(links))
+	results := make(chan result, len(allLinks))
 
-	for _, link := range links {
+	for _, link := range allLinks {
 		go func(l string) {
 			latency, err := proxy.GetProxyLatency(l, timeoutTime)
 			if err != nil {
@@ -42,7 +51,7 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 	var bestLink string
 	minLatency := math.MaxInt
 
-	for i := 0; i < len(links); i++ {
+	for i := 0; i < len(allLinks); i++ {
 		res := <-results
 		if res.latency != -1 && res.latency < minLatency {
 			minLatency = res.latency
@@ -57,9 +66,21 @@ func getBestProxy(subscriptionLink string, timeoutTime time.Duration) (string, e
 	return bestLink, nil
 }
 
+type stringList []string
+
+func (s *stringList) String() string {
+	return fmt.Sprintf("%v", *s)
+}
+
+func (s *stringList) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+
 func main() {
-	subscriptionLink := flag.String("link", "", "subscription link")
-	flag.StringVar(subscriptionLink, "l", "", "subscription link")
+	var subscriptionLinks stringList
+	flag.Var(&subscriptionLinks, "link", "subscription link (can be specified multiple times)")
+	flag.Var(&subscriptionLinks, "l", "subscription link (shorthand, can be specified multiple times)")
 
 	singboxPath := flag.String("singbox-path", "", "path to sing-box binary")
 	flag.StringVar(singboxPath, "s", "", "path to sing-box binary")
@@ -75,7 +96,7 @@ func main() {
 
 	flag.Parse()
 
-	if *subscriptionLink == "" || *singboxPath == "" {
+	if len(subscriptionLinks) == 0 || *singboxPath == "" {
 		flag.Usage()
 		fmt.Fprintf(os.Stderr, "both --link (-l) and --singbox-path (-s) are required\n")
 		os.Exit(1)
@@ -83,7 +104,7 @@ func main() {
 
 	client := &http.Client{Timeout: *timeoutTime}
 	for {
-		bestProxy, err := getBestProxy(*subscriptionLink, *timeoutTime)
+		bestProxy, err := getBestProxy(subscriptionLinks, *timeoutTime)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to get best proxy: %s\n", err)
 			time.Sleep(*backoffTime)
