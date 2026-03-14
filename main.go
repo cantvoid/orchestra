@@ -80,10 +80,10 @@ func (s *stringList) Set(value string) error {
 func main() {
 	var subscriptionLinks stringList
 	flag.Var(&subscriptionLinks, "link", "subscription link (can be specified multiple times)")
-	flag.Var(&subscriptionLinks, "l", "subscription link (shorthand, can be specified multiple times)")
+	flag.Var(&subscriptionLinks, "l", "subscription link (shorthand for -link, can be specified multiple times)")
 
 	singboxPath := flag.String("singbox-path", "", "path to sing-box binary")
-	flag.StringVar(singboxPath, "s", "", "path to sing-box binary")
+	flag.StringVar(singboxPath, "s", "", "path to sing-box binary (shorthand for -singbox-path)")
 
 	waitTime := flag.Duration("wait", 5*time.Second, "how much time to wait for sing-box to start (use this when sing-box can't read the config fast enough)")
 
