@@ -38,8 +38,8 @@ func ProxyToSingbox(proxyURL string) (map[string]interface{}, error) {
 		"dns": map[string]interface{}{
 			"servers": []map[string]interface{}{
 				{"tag": "local_local", "type": "udp", "server": "223.5.5.5"},
-				{"tag": "remote_dns", "type": "https", "server": "cloudflare-dns.com", "domain_resolver": "hosts_dns", "path": "/dns-query", "detour": "proxy"},
-				{"tag": "direct_dns", "type": "https", "server": "dns.alidns.com", "domain_resolver": "hosts_dns", "path": "/dns-query"},
+				{"tag": "remote_dns", "type": "udp", "server": "1.1.1.1"},
+				{"tag": "direct_dns", "type": "udp", "server": "223.5.5.5"},
 				{
 					"tag":  "hosts_dns",
 					"type": "hosts",
