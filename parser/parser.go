@@ -110,36 +110,44 @@ func ProxyToSingbox(proxyURL string) (map[string]interface{}, error) {
 }
 
 func vlessToSingbox(proxyURL string) (map[string]interface{}, error) {
-	u, err := url.Parse(proxyURL)
-	if err != nil {
-		return nil, err
-	}
-	q := u.Query()
-	outbound := map[string]interface{}{
-		"type":            "vless",
-		"server":          u.Hostname(),
-		"server_port":     getPort(u),
-		"uuid":            u.User.Username(),
-		"flow":            q.Get("flow"),
-		"packet_encoding": "xudp",
-	}
-	if q.Get("security") == "reality" {
-		outbound["tls"] = map[string]interface{}{
-			"enabled":     true,
-			"server_name": getSNI(u),
-			"insecure":    false,
-			"utls": map[string]interface{}{
-				"enabled":     true,
-				"fingerprint": q.Get("fp"),
-			},
-			"reality": map[string]interface{}{
-				"enabled":    true,
-				"public_key": q.Get("pbk"),
-				"short_id":   q.Get("sid"),
-			},
-		}
-	}
-	return outbound, nil
+        u, err := url.Parse(proxyURL)
+        if err != nil {
+                return nil, err
+        }
+        q := u.Query()
+        outbound := map[string]interface{}{
+                "type":            "vless",
+                "server":          u.Hostname(),
+                "server_port":     getPort(u),
+                "uuid":            u.User.Username(),
+                "flow":            q.Get("flow"),
+                "packet_encoding": "xudp",
+        }
+        
+        if transport := q.Get("type"); transport == "grpc" {
+                outbound["transport"] = map[string]interface{}{
+                        "type":         "grpc",
+                        "service_name": q.Get("serviceName"),
+                }
+        }
+        
+        if q.Get("security") == "reality" {
+                outbound["tls"] = map[string]interface{}{
+                        "enabled":     true,
+                        "server_name": getSNI(u),
+                        "insecure":    false,
+                        "utls": map[string]interface{}{
+                                "enabled":     true,
+                                "fingerprint": q.Get("fp"),
+                        },
+                        "reality": map[string]interface{}{
+                                "enabled":    true,
+                                "public_key": q.Get("pbk"),
+                                "short_id":   q.Get("sid"),
+                        },
+                }
+        }
+        return outbound, nil
 }
 
 func VmessToSingbox(proxyURL string) (map[string]interface{}, error) {
