@@ -1,6 +1,6 @@
 BINARY_NAME=orchestra
 RELEASE_DIR=dist
-VERSION=v1.3.1
+VERSION=v1.4.0
 SHELL := /bin/bash
 
 #OS/ARCH/ARM_VERSION
