@@ -24,7 +24,7 @@ release:
 		\
 		EXT=""; [ "$$OS" = "windows" ] && EXT=".exe"; \
 		mkdir -p $(RELEASE_DIR)/$$OUT_NAME; \
-		go build -ldflags="-s -w" -o $(RELEASE_DIR)/$$OUT_NAME/$(BINARY_NAME)$$EXT .; \
+		CGO_ENABLED=0 go build -ldflags="-s -w" -o $(RELEASE_DIR)/$$OUT_NAME/$(BINARY_NAME)$$EXT .; \
 		cp LICENSE $(RELEASE_DIR)/$$OUT_NAME/; \
 		\
 		tar -C $(RELEASE_DIR) -czf $(RELEASE_DIR)/$$OUT_NAME.tar.gz $$OUT_NAME; \
